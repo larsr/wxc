@@ -19,8 +19,9 @@ import Distribution.Simple.Setup ( BuildFlags, ConfigFlags
                                  , InstallFlags, installVerbosity
                                  , fromFlag, fromFlagOrDefault, copyDest
                                  )
-import Distribution.Simple.Utils (installOrdinaryFile, rawSystemExitWithEnv, rawSystemStdInOut, die)
+import Distribution.Simple.Utils (installOrdinaryFile, rawSystemExitWithEnv, rawSystemStdInOut)
 import Distribution.System (OS (..), Arch (..), buildOS, buildArch)
+import Distribution.Utils.IOData ( IODataMode( IODataModeText ) )
 import Distribution.Verbosity (Verbosity, normal, verbose)
 import Distribution.Compat.Exception (catchIO)
 import System.Process (system, readProcess)
@@ -79,7 +80,7 @@ rawShellSystemStdInOut :: Verbosity                     -- Verbosity level
                        -> FilePath                      -- Path to command
                        -> [String]                      -- Command arguments
                        -> IO (String, String, ExitCode) -- (Command result, Errors, Command exit status)
-rawShellSystemStdInOut v f as = rawSystemStdInOut v "sh" (f:as) Nothing Nothing Nothing False
+rawShellSystemStdInOut v f as = rawSystemStdInOut v "sh" (f:as) Nothing Nothing Nothing IODataModeText
 
 
 isWindowsMsys :: IO Bool
@@ -436,7 +437,7 @@ deMsysPaths bi = do
     if b
     then do
         let cor ph = do
-            (r, e, c ) <- rawSystemStdInOut normal "sh" ["-c", "cd " ++ ph ++ "; pwd -W"] Nothing Nothing Nothing False
+            (r, e, c ) <- rawSystemStdInOut normal "sh" ["-c", "cd " ++ ph ++ "; pwd -W"] Nothing Nothing Nothing IODataModeText
             unless (c == ExitSuccess) (putStrLn ("Error: failed to convert MSYS path to native path \n" ++ e) >> exitFailure)
             return . head . lines $ r
         elds  <- mapM cor (extraLibDirs bi)
@@ -503,6 +504,7 @@ sharedLibName ver basename =
       _       -> "lib" ++ basename ++ ".so." ++ full_ver
         where
           full_ver = (concat . intersperse "." . map show . versionBranch) ver
+          versionBranch _ = "0"
 
 -- | Return any linker options required to support shared library creation
 linkCxxOpts :: Version  -- ^ Version information to be used for Unix shared libraries
