@@ -1,1 +1,1 @@
-#define wxVERSION_NUMBER 3002
+#define wxVERSION_NUMBER 3000
